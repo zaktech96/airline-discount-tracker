@@ -133,6 +133,20 @@ const config: Config = {
             transform: 'scale(1)',
           },
         },
+        blob: {
+          '0%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+          '33%': {
+            transform: 'translate(30px, -50px) scale(1.1)',
+          },
+          '66%': {
+            transform: 'translate(-20px, 20px) scale(0.9)',
+          },
+          '100%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+        },
       },
       animation: {
         'logo-cloud': 'logo-cloud 30s linear infinite', // Adjust duration and timing as needed for your design.
@@ -144,6 +158,7 @@ const config: Config = {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'border-beam': 'border-beam calc(var(--duration)*1s) infinite linear',
         'background-shine': 'background-shine 2s linear infinite',
+        'blob': 'blob 7s infinite',
       },
     },
   },
