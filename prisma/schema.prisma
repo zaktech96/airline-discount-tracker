@@ -71,3 +71,37 @@ model invoices {
   email           String
   user_id         String?
 }
+
+model flight_route {
+  id           Int           @id @default(autoincrement())
+  created_time DateTime      @default(now())
+  origin       String
+  destination  String
+  user_id      String
+  price_alerts price_alert[]
+  price_history price_history[]
+
+  @@unique([origin, destination, user_id])
+}
+
+model price_alert {
+  id              Int          @id @default(autoincrement())
+  created_time    DateTime     @default(now())
+  route           flight_route @relation(fields: [route_id], references: [id])
+  route_id        Int
+  target_price    Float
+  is_active       Boolean      @default(true)
+  last_checked    DateTime     @default(now())
+  user_id         String
+}
+
+model price_history {
+  id           Int          @id @default(autoincrement())
+  created_time DateTime     @default(now())
+  route        flight_route @relation(fields: [route_id], references: [id])
+  route_id     Int
+  price        Float
+  currency     String       @default("USD")
+  airline      String?
+  flight_number String?
+}

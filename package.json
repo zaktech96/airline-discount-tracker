@@ -80,7 +80,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "latest",
-    "@types/react": "latest",
+    "@types/react": "^19.0.2",
     "@types/react-dom": "latest",
     "autoprefixer": "latest",
     "postcss": "latest",
