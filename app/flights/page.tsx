@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Plane, Bell, ArrowRight, Loader2 } from "lucide-react";
+import axios from "axios";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -21,15 +22,46 @@ export default function FlightTrackerPage() {
   const [targetPrice, setTargetPrice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const validateForm = () => {
+    if (origin === destination) {
+      toast.error("Origin and destination cannot be the same");
+      return false;
+    }
+    if (origin.length !== 3 || destination.length !== 3) {
+      toast.error("Please enter valid 3-letter airport codes");
+      return false;
+    }
+    if (parseFloat(targetPrice) <= 0) {
+      toast.error("Please enter a valid target price");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to save flight route and create alert
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      toast.success("Flight alert created successfully!");
+      const response = await axios.post("/api/alerts", {
+        origin,
+        destination,
+        targetPrice
+      });
+
+      if (response.data.success) {
+        toast.success("Flight alert created successfully!");
+        // Clear form
+        setOrigin("");
+        setDestination("");
+        setTargetPrice("");
+      } else {
+        throw new Error(response.data.error || "Failed to create alert");
+      }
     } catch (error) {
-      toast.error("Failed to create flight alert");
+      console.error("Error creating alert:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to create flight alert");
     } finally {
       setIsSubmitting(false);
     }
