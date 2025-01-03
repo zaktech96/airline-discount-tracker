@@ -3,52 +3,77 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { ArrowRight, Plane, Bell, PiggyBank } from "lucide-react";
 
-const fadeIn = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
+const slideIn = {
+  initial: { opacity: 0, x: -20 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.6, ease: "easeOut" }
 };
 
-const staggerChildren = {
+const fadeInUp = {
+  initial: { opacity: 0, y: 40 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.8, ease: "easeOut" }
+};
+
+const staggerContainer = {
   animate: {
     transition: {
-      staggerChildren: 0.2
+      staggerChildren: 0.3
     }
   }
 };
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
-          <div className="container px-4 md:px-6">
+        {/* Hero Section */}
+        <section className="relative w-full py-20 md:py-32 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20" />
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0"
+          >
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:14px] bg-[position:center] dark:bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px)]" />
+          </motion.div>
+          
+          <div className="container relative px-4 md:px-6">
             <motion.div 
-              className="flex flex-col items-center space-y-4 text-center"
+              className="flex flex-col items-center space-y-8 text-center"
               initial="initial"
               animate="animate"
-              variants={staggerChildren}
+              variants={staggerContainer}
             >
-              <motion.div 
-                className="space-y-2"
-                variants={fadeIn}
-              >
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                  Track Flight Prices & Save Money
+              <motion.div variants={fadeInUp} className="space-y-4 max-w-3xl">
+                <div className="inline-block rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-px">
+                  <div className="rounded-full bg-white/80 dark:bg-black/80 px-4 py-1.5">
+                    <span className="text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                      Never Overpay for Flights Again
+                    </span>
+                  </div>
+                </div>
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl/none bg-gradient-to-r from-gray-900 via-blue-800 to-purple-900 dark:from-white dark:via-blue-200 dark:to-purple-200 bg-clip-text text-transparent">
+                  Your Personal Flight
+                  <br />
+                  Price Guardian
                 </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Get notified when flight prices drop. Never overpay for airline tickets again.
+                <p className="mx-auto max-w-[700px] text-gray-600 md:text-xl dark:text-gray-300">
+                  Get instant alerts when flight prices drop to your target. Save hundreds on your next adventure.
                 </p>
               </motion.div>
+
               <motion.div 
-                className="space-x-4"
-                variants={fadeIn}
-                whileHover={{ scale: 1.05 }}
+                variants={fadeInUp}
+                className="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center"
               >
-                <Link href="/flights">
-                  <Button size="lg" className="transition-transform hover:scale-105">
-                    Start Tracking Flights
+                <Link href="/flights" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 group">
+                    Start Tracking
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
               </motion.div>
@@ -56,96 +81,86 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100 dark:bg-gray-800">
+        {/* Features Section */}
+        <section className="w-full py-20 bg-white dark:bg-gray-800/50">
           <div className="container px-4 md:px-6">
             <motion.div 
-              className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"
+              className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3"
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
-              variants={staggerChildren}
+              variants={staggerContainer}
             >
               {[
                 {
-                  title: "Track Any Route",
-                  description: "Monitor prices for your favorite flight routes worldwide",
-                  icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                  title: "Smart Route Tracking",
+                  description: "Monitor any flight route worldwide with real-time price updates",
+                  icon: Plane,
+                  gradient: "from-blue-500 to-cyan-500"
                 },
                 {
-                  title: "Instant Alerts",
-                  description: "Get notified immediately when prices drop below your target",
-                  icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  title: "Instant Price Alerts",
+                  description: "Get notified the moment prices drop below your target",
+                  icon: Bell,
+                  gradient: "from-purple-500 to-pink-500"
                 },
                 {
-                  title: "Save Money",
-                  description: "Book at the lowest prices and save hundreds on airfare",
-                  icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  title: "Maximize Savings",
+                  description: "Save hundreds by booking at the perfect moment",
+                  icon: PiggyBank,
+                  gradient: "from-green-500 to-emerald-500"
                 }
               ].map((feature, index) => (
-                <motion.div 
+                <motion.div
                   key={index}
-                  className="flex flex-col items-center space-y-4"
-                  variants={fadeIn}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
+                  variants={slideIn}
+                  className="relative group"
                 >
-                  <motion.div 
-                    className="p-4 bg-white rounded-full dark:bg-gray-900"
-                    whileHover={{ rotate: 360 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <svg
-                      className="w-6 h-6 text-primary"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all opacity-0 group-hover:opacity-100" />
+                  <div className="relative p-8 rounded-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all">
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      className={`inline-flex p-3 rounded-2xl bg-gradient-to-r ${feature.gradient} mb-6`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={feature.icon}
-                      />
-                    </svg>
-                  </motion.div>
-                  <h3 className="text-xl font-bold">{feature.title}</h3>
-                  <p className="text-center text-gray-500 dark:text-gray-400">
-                    {feature.description}
-                  </p>
+                      <feature.icon className="w-6 h-6 text-white" />
+                    </motion.div>
+                    <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {feature.description}
+                    </p>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>
           </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        {/* CTA Section */}
+        <section className="w-full py-20 bg-gradient-to-b from-white to-blue-50 dark:from-gray-800 dark:to-gray-900">
           <div className="container px-4 md:px-6">
             <motion.div 
-              className="flex flex-col items-center justify-center space-y-4 text-center"
+              className="relative max-w-3xl mx-auto text-center"
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
-              variants={staggerChildren}
+              variants={staggerContainer}
             >
-              <motion.div 
-                className="space-y-2"
-                variants={fadeIn}
-              >
-                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
+              <motion.div variants={fadeInUp} className="space-y-4">
+                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Ready to Start Saving?
                 </h2>
-                <p className="mx-auto max-w-[600px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Join thousands of travelers who are already saving money on their flights
+                <p className="text-gray-600 dark:text-gray-300 md:text-lg">
+                  Join thousands of smart travelers who never overpay for flights
                 </p>
               </motion.div>
               <motion.div 
-                className="space-x-4"
-                variants={fadeIn}
-                whileHover={{ scale: 1.05 }}
+                variants={fadeInUp}
+                className="mt-8"
               >
                 <Link href="/flights">
-                  <Button size="lg" className="bg-primary transition-all hover:shadow-lg">
+                  <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300">
                     Set Up Your First Alert
+                    <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </Link>
               </motion.div>
