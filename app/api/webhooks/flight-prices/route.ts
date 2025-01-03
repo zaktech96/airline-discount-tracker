@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   try {
     // Verify webhook signature if using a service that provides it
-    const headersList = headers();
+    const headersList = await headers();
     const signature = headersList.get("x-webhook-signature");
 
     const body = await req.json();

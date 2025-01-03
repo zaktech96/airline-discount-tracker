@@ -6,119 +6,181 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Plane, Bell, ArrowRight, Loader2 } from "lucide-react";
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5 }
+};
 
 export default function FlightTrackerPage() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       // TODO: Implement API call to save flight route and create alert
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       toast.success("Flight alert created successfully!");
     } catch (error) {
       toast.error("Failed to create flight alert");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="container mx-auto py-8">
-      {/* Hero Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-bold mb-4">Never Miss a Flight Deal Again</h1>
-        <p className="text-xl text-muted-foreground mb-6">
-          Set up price alerts for your favorite routes and get notified when prices drop below your target.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
-          <div className="flex flex-col items-center">
-            <div className="bg-primary/10 p-3 rounded-full mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
+      <div className="max-w-6xl mx-auto space-y-12">
+        {/* Header Section */}
+        <motion.div 
+          className="text-center space-y-4"
+          initial="initial"
+          animate="animate"
+          variants={{
+            animate: { transition: { staggerChildren: 0.2 } }
+          }}
+        >
+          <motion.div variants={fadeInUp}>
+            <div className="inline-block rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 p-px mb-4">
+              <div className="rounded-full bg-white/90 dark:bg-black/90 px-4 py-1.5">
+                <span className="text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                  Set Up Price Alerts
+                </span>
+              </div>
             </div>
-            <h3 className="font-semibold mb-1">Create Alerts</h3>
-            <p className="text-sm text-muted-foreground">Set your desired price for any route</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="bg-primary/10 p-3 rounded-full mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
+          </motion.div>
+          <motion.h1 
+            variants={fadeInUp}
+            className="text-3xl font-bold tracking-tight sm:text-4xl bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-900 dark:from-white dark:via-indigo-200 dark:to-purple-200 bg-clip-text text-transparent"
+          >
+            Track Your Dream Flights
+          </motion.h1>
+          <motion.p 
+            variants={fadeInUp}
+            className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300"
+          >
+            Enter your route details below and we'll notify you when prices drop to your target.
+          </motion.p>
+        </motion.div>
+
+        {/* Alert Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
+            <div className="relative p-8">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid gap-8 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="origin" className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Origin Airport
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="origin"
+                        placeholder="e.g., LAX"
+                        value={origin}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setOrigin(e.target.value.toUpperCase())}
+                        className="uppercase bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
+                        maxLength={3}
+                        required
+                      />
+                      <Plane className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="destination" className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Destination Airport
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="destination"
+                        placeholder="e.g., JFK"
+                        value={destination}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value.toUpperCase())}
+                        className="uppercase bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
+                        maxLength={3}
+                        required
+                      />
+                      <Plane className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="targetPrice" className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Target Price ($)
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="targetPrice"
+                        type="number"
+                        placeholder="e.g., 299"
+                        value={targetPrice}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setTargetPrice(e.target.value)}
+                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
+                        min="1"
+                        required
+                      />
+                      <Bell className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Alert...
+                    </>
+                  ) : (
+                    <>
+                      Create Price Alert
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
             </div>
-            <h3 className="font-semibold mb-1">Get Notified</h3>
-            <p className="text-sm text-muted-foreground">Receive alerts when prices drop</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="bg-primary/10 p-3 rounded-full mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          </Card>
+        </motion.div>
+
+        {/* Active Alerts */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
+            <div className="relative p-8">
+              <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Your Active Alerts
+              </h2>
+              <div className="space-y-4">
+                {/* TODO: Implement alerts list */}
+                <p className="text-gray-500 dark:text-gray-400">
+                  No active alerts yet. Create one above to start tracking prices.
+                </p>
+              </div>
             </div>
-            <h3 className="font-semibold mb-1">Save Money</h3>
-            <p className="text-sm text-muted-foreground">Book flights at the best prices</p>
-          </div>
-        </div>
+          </Card>
+        </motion.div>
       </div>
-
-      {/* Search Form */}
-      <Card className="p-6 mb-8">
-        <h2 className="text-2xl font-semibold mb-6">Set Up Price Alert</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="origin">Origin Airport</Label>
-              <Input
-                id="origin"
-                placeholder="e.g., LAX"
-                value={origin}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setOrigin(e.target.value.toUpperCase())}
-                className="uppercase"
-                maxLength={3}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="destination">Destination Airport</Label>
-              <Input
-                id="destination"
-                placeholder="e.g., JFK"
-                value={destination}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value.toUpperCase())}
-                className="uppercase"
-                maxLength={3}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="targetPrice">Target Price ($)</Label>
-              <Input
-                id="targetPrice"
-                type="number"
-                placeholder="e.g., 299"
-                value={targetPrice}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setTargetPrice(e.target.value)}
-                min="1"
-                required
-              />
-            </div>
-          </div>
-          
-          <Button type="submit" className="w-full">
-            Create Price Alert
-          </Button>
-        </form>
-      </Card>
-
-      <Card className="p-6">
-        <h2 className="text-2xl font-semibold mb-4">Your Active Alerts</h2>
-        <div className="space-y-4">
-          {/* TODO: Implement alerts list */}
-          <p className="text-muted-foreground">No active alerts yet.</p>
-        </div>
-      </Card>
     </div>
   );
 } 
