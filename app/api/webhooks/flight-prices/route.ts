@@ -1,3 +1,5 @@
+"use client"
+
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { headers } from "next/headers";
