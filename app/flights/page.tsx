@@ -45,6 +45,8 @@ export default function FlightTrackerPage() {
     
     setIsSubmitting(true);
     try {
+      console.log('Searching flights:', { origin, destination });
+      
       // First, search for flights
       const searchResponse = await axios.get(`/api/flights/search`, {
         params: {
@@ -53,16 +55,29 @@ export default function FlightTrackerPage() {
         }
       });
 
-      if (searchResponse.data.flights) {
+      console.log('Search response:', searchResponse.data);
+
+      if (searchResponse.data.success && searchResponse.data.flights) {
         setSearchResults(searchResponse.data.flights);
-        toast.success("Found flights for your route!");
+        toast.success(`Found ${searchResponse.data.flights.length} flights!`);
       } else {
-        toast.error("No flights found for this route");
+        console.error('API returned success false:', searchResponse.data);
+        toast.error(searchResponse.data.error || "No flights found for this route");
       }
 
-    } catch (error) {
-      console.error("Error searching flights:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to search flights");
+    } catch (error: any) {
+      console.error("Flight search error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+
+      const errorMessage = error.response?.data?.details || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          "Failed to search flights";
+                          
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
