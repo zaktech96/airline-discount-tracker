@@ -21,14 +21,15 @@ export default function FlightTrackerPage() {
   const [destination, setDestination] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
   const validateForm = () => {
     if (origin === destination) {
-      toast.error("Origin and destination cannot be the same");
+      toast.error("Origin and destination cities cannot be the same");
       return false;
     }
-    if (origin.length !== 3 || destination.length !== 3) {
-      toast.error("Please enter valid 3-letter airport codes");
+    if (origin.length < 3 || destination.length < 3) {
+      toast.error("Please enter valid city names (minimum 3 letters)");
       return false;
     }
     if (parseFloat(targetPrice) <= 0) {
@@ -44,24 +45,24 @@ export default function FlightTrackerPage() {
     
     setIsSubmitting(true);
     try {
-      const response = await axios.post("/api/alerts", {
-        origin,
-        destination,
-        targetPrice
+      // First, search for flights
+      const searchResponse = await axios.get(`/api/flights/search`, {
+        params: {
+          origin,
+          destination
+        }
       });
 
-      if (response.data.success) {
-        toast.success("Flight alert created successfully!");
-        // Clear form
-        setOrigin("");
-        setDestination("");
-        setTargetPrice("");
+      if (searchResponse.data.flights) {
+        setSearchResults(searchResponse.data.flights);
+        toast.success("Found flights for your route!");
       } else {
-        throw new Error(response.data.error || "Failed to create alert");
+        toast.error("No flights found for this route");
       }
+
     } catch (error) {
-      console.error("Error creating alert:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create flight alert");
+      console.error("Error searching flights:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to search flights");
     } finally {
       setIsSubmitting(false);
     }
@@ -115,16 +116,16 @@ export default function FlightTrackerPage() {
                 <div className="grid gap-8 sm:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="origin" className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      Origin Airport
+                      Origin City
                     </Label>
                     <div className="relative">
                       <Input
                         id="origin"
-                        placeholder="e.g., LAX"
+                        placeholder="Enter departure city"
                         value={origin}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => setOrigin(e.target.value.toUpperCase())}
-                        className="uppercase bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
-                        maxLength={3}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setOrigin(e.target.value)}
+                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
+                        minLength={3}
                         required
                       />
                       <Plane className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -133,16 +134,16 @@ export default function FlightTrackerPage() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="destination" className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      Destination Airport
+                      Destination City
                     </Label>
                     <div className="relative">
                       <Input
                         id="destination"
-                        placeholder="e.g., JFK"
+                        placeholder="Enter arrival city"
                         value={destination}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value.toUpperCase())}
-                        className="uppercase bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
-                        maxLength={3}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
+                        minLength={3}
                         required
                       />
                       <Plane className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -177,11 +178,11 @@ export default function FlightTrackerPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Alert...
+                      Searching Flights...
                     </>
                   ) : (
                     <>
-                      Create Price Alert
+                      Search Flights
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}
@@ -191,23 +192,71 @@ export default function FlightTrackerPage() {
           </Card>
         </motion.div>
 
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="relative overflow-hidden mt-8">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
+              <div className="relative p-8">
+                <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Available Flights
+                </h2>
+                <div className="space-y-4">
+                  {searchResults.map((flight, index) => (
+                    <div 
+                      key={index}
+                      className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-semibold">{flight.airline}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            {flight.departure?.time} - {flight.arrival?.time}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                            ${flight.price}
+                          </p>
+                          <Button
+                            size="sm"
+                            onClick={() => setTargetPrice(flight.price)}
+                            className="mt-2"
+                          >
+                            Set as Target
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Active Alerts */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="relative overflow-hidden">
+          <Card className="relative overflow-hidden mt-8">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
             <div className="relative p-8">
               <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 Your Active Alerts
               </h2>
               <div className="space-y-4">
-                {/* TODO: Implement alerts list */}
-                <p className="text-gray-500 dark:text-gray-400">
-                  No active alerts yet. Create one above to start tracking prices.
-                </p>
+                <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-center">
+                    No active alerts yet. Create one above to start tracking prices.
+                  </p>
+                </div>
               </div>
             </div>
           </Card>
