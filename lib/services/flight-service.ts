@@ -2,103 +2,30 @@ import axios from 'axios';
 import config from '@/lib/config';
 
 const API_KEY = config.serpApi.apiKey;
-const BASE_URL = config.serpApi.baseUrl;
+const BASE_URL = 'https://serpapi.com/search.json';
 
-// Mock data for testing different scenarios
-const MOCK_FLIGHTS = [
-  {
-    airline: "British Airways",
-    price: 450,
-    flight_number: "BA346",
-    departure: {
-      airport: "London Heathrow (LHR)",
-      time: "07:30 AM"
-    },
-    arrival: {
-      airport: "Paris Charles de Gaulle (CDG)",
-      time: "09:45 AM"
-    }
-  },
-  {
-    airline: "Air France",
-    price: 380,
-    flight_number: "AF1681",
-    departure: {
-      airport: "London Gatwick (LGW)",
-      time: "10:15 AM"
-    },
-    arrival: {
-      airport: "Paris Orly (ORY)",
-      time: "12:30 PM"
-    }
-  },
-  {
-    airline: "EasyJet",
-    price: 220,
-    flight_number: "EZY8463",
-    departure: {
-      airport: "London Luton (LTN)",
-      time: "14:45 PM"
-    },
-    arrival: {
-      airport: "Paris Charles de Gaulle (CDG)",
-      time: "17:00 PM"
-    }
-  },
-  {
-    airline: "Ryanair",
-    price: 175,
-    flight_number: "FR1123",
-    departure: {
-      airport: "London Stansted (STN)",
-      time: "16:20 PM"
-    },
-    arrival: {
-      airport: "Paris Beauvais (BVA)",
-      time: "18:35 PM"
-    }
-  },
-  {
-    airline: "Vueling",
-    price: 310,
-    flight_number: "VY8765",
-    departure: {
-      airport: "London Gatwick (LGW)",
-      time: "19:00 PM"
-    },
-    arrival: {
-      airport: "Paris Orly (ORY)",
-      time: "21:15 PM"
-    }
-  }
-];
-
-// Common city pairs for testing
-const TEST_ROUTES = {
-  'London-Paris': {
-    distance: '344 km',
-    flightTime: '~1h 15m',
-    airports: {
-      departure: ['LHR', 'LGW', 'LTN', 'STN'],
-      arrival: ['CDG', 'ORY', 'BVA']
-    }
-  },
-  'New York-London': {
-    distance: '5,567 km',
-    flightTime: '~7h 30m',
-    airports: {
-      departure: ['JFK', 'EWR', 'LGA'],
-      arrival: ['LHR', 'LGW', 'STN']
-    }
-  },
-  'Tokyo-Seoul': {
-    distance: '1,157 km',
-    flightTime: '~2h 15m',
-    airports: {
-      departure: ['NRT', 'HND'],
-      arrival: ['ICN', 'GMP']
-    }
-  }
+// Common airport codes for major cities
+const CITY_TO_AIRPORT: { [key: string]: string } = {
+  'london': 'LHR',
+  'paris': 'CDG',
+  'new york': 'JFK',
+  'tokyo': 'HND',
+  'beijing': 'PEK',
+  'dubai': 'DXB',
+  'singapore': 'SIN',
+  'hong kong': 'HKG',
+  'seoul': 'ICN',
+  'sydney': 'SYD',
+  'los angeles': 'LAX',
+  'chicago': 'ORD',
+  'toronto': 'YYZ',
+  'frankfurt': 'FRA',
+  'amsterdam': 'AMS',
+  'madrid': 'MAD',
+  'rome': 'FCO',
+  'istanbul': 'IST',
+  'bangkok': 'BKK',
+  'mumbai': 'BOM'
 };
 
 interface FlightPrice {
@@ -115,6 +42,12 @@ interface FlightPrice {
   };
 }
 
+interface DatePrice {
+  date: string;
+  price: number;
+  available: boolean;
+}
+
 export class FlightService {
   private static instance: FlightService;
 
@@ -122,7 +55,6 @@ export class FlightService {
     console.log('FlightService instance created');
     console.log('API Configuration:', {
       hasApiKey: !!API_KEY,
-      apiKeyLength: API_KEY?.length || 0,
       baseUrl: BASE_URL
     });
   }
@@ -134,31 +66,262 @@ export class FlightService {
     return FlightService.instance;
   }
 
-  async searchFlights(departureCity: string, arrivalCity: string): Promise<FlightPrice[]> {
+  private getCityAirportCode(city: string): string {
+    const normalizedCity = city.toLowerCase().trim();
+    const airportCode = CITY_TO_AIRPORT[normalizedCity];
+    
+    if (!airportCode) {
+      // If it looks like an airport code already, return it uppercase
+      if (city.length === 3 && /^[A-Za-z]{3}$/.test(city)) {
+        return city.toUpperCase();
+      }
+      throw new Error(`No airport code found for city: ${city}. Please use a 3-letter airport code (e.g., LHR for London) or a supported city name.`);
+    }
+    
+    return airportCode;
+  }
+
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  async getDateRangePrices(
+    departureCity: string, 
+    arrivalCity: string, 
+    startDate: Date = new Date()
+  ): Promise<DatePrice[]> {
+    try {
+      const departureCode = this.getCityAirportCode(departureCity);
+      const arrivalCode = this.getCityAirportCode(arrivalCity);
+      
+      // Get prices for next 30 days
+      const dates: DatePrice[] = [];
+      const promises = [];
+
+      // Start from tomorrow
+      startDate = this.addDays(startDate, 1);
+      
+      console.log('Fetching prices for date range:', {
+        departureCity,
+        departureCode,
+        arrivalCity,
+        arrivalCode,
+        startDate: this.formatDate(startDate)
+      });
+
+      // Create an array of 30 dates
+      for (let i = 0; i < 30; i++) {
+        const currentDate = this.addDays(startDate, i);
+        const formattedDate = this.formatDate(currentDate);
+        
+        const params = {
+          api_key: API_KEY,
+          engine: 'google_flights',
+          departure_id: departureCode,
+          arrival_id: arrivalCode,
+          outbound_date: formattedDate,
+          currency: 'USD',
+          hl: 'en',
+          type: '2',
+          gl: 'us',
+          num: '50'
+        };
+
+        // Store the date and create the promise
+        dates.push({
+          date: formattedDate,
+          price: 0,
+          available: false
+        });
+
+        promises.push(
+          axios.get(BASE_URL, { params })
+            .then(response => {
+              const flights = response.data.flights_data || 
+                            response.data.best_flights?.oneway || 
+                            response.data.other_flights?.oneway || 
+                            response.data.flights_results || 
+                            [];
+              
+              if (flights.length > 0) {
+                // Find the lowest price for this date
+                const lowestPrice = Math.min(...flights.map((flight: any) => 
+                  parseFloat(String(flight.price?.total || flight.price).replace(/[^0-9.]/g, '') || '999999')
+                ));
+                
+                // Update the date entry
+                const dateEntry = dates.find(d => d.date === formattedDate);
+                if (dateEntry) {
+                  dateEntry.price = lowestPrice;
+                  dateEntry.available = true;
+                }
+
+                console.log(`Found ${flights.length} flights for ${formattedDate}, lowest price: ${lowestPrice}`);
+              } else {
+                console.log(`No flights found for ${formattedDate}`);
+              }
+            })
+            .catch(error => {
+              console.error(`Error fetching price for ${formattedDate}:`, error.message);
+              if (error.response?.data?.error) {
+                console.error('API Error:', error.response.data.error);
+              }
+            })
+        );
+      }
+
+      // Wait for all requests to complete
+      await Promise.all(promises);
+
+      // Sort dates chronologically
+      dates.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      return dates;
+
+    } catch (error: any) {
+      console.error('Error fetching date range prices:', error);
+      throw new Error(`Failed to fetch price calendar: ${error.message}`);
+    }
+  }
+
+  async searchFlights(departureCity: string, arrivalCity: string, searchDate?: string): Promise<FlightPrice[]> {
     try {
       console.log('=== Flight Service Search Start ===');
+      
+      // Convert city names to airport codes
+      const departureCode = this.getCityAirportCode(departureCity);
+      const arrivalCode = this.getCityAirportCode(arrivalCity);
+      
       console.log('Search parameters:', {
         departureCity,
+        departureCode,
         arrivalCity,
+        arrivalCode,
+        searchDate,
         hasApiKey: !!API_KEY
       });
 
-      // For now, return mock data while we debug the API integration
-      console.log('Returning mock flight data for testing');
+      if (!API_KEY) {
+        throw new Error('API key is not configured');
+      }
+
+      // Use provided date or default to 1 month from now
+      let outboundDate: string;
+      if (searchDate) {
+        outboundDate = searchDate;
+      } else {
+        // Default to next month
+        const date = new Date();
+        date.setMonth(date.getMonth() + 1);
+        // Set to the first of the month to ensure availability
+        date.setDate(1);
+        outboundDate = this.formatDate(date);
+      }
+
+      // Ensure the date is in YYYY-MM-DD format
+      if (!outboundDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        throw new Error('Invalid date format. Please use YYYY-MM-DD format.');
+      }
+
+      console.log('Search date:', outboundDate);
+
+      // Format the search query
+      const params = {
+        api_key: API_KEY,
+        engine: 'google_flights',
+        departure_id: departureCode,
+        arrival_id: arrivalCode,
+        outbound_date: outboundDate,
+        currency: 'USD',
+        hl: 'en',
+        type: '2',  // 2 for one-way trip
+        gl: 'us',   // country code
+        num: '50'   // number of results
+      };
+
+      console.log('Making API request to SerpAPI...');
+      const requestUrl = new URL(BASE_URL);
+      Object.entries(params).forEach(([key, value]) => {
+        if (key !== 'api_key') {
+          requestUrl.searchParams.append(key, value.toString());
+        }
+      });
+      console.log('Request URL (without API key):', requestUrl.toString());
+      console.log('Full params:', { ...params, api_key: 'HIDDEN' });
       
-      // Randomize prices slightly to simulate real-time changes
-      return MOCK_FLIGHTS.map(flight => ({
-        ...flight,
-        price: Math.round(flight.price * (0.9 + Math.random() * 0.2)), // ±10% price variation
+      const response = await axios.get(BASE_URL, { params });
+      console.log('API Response:', {
+        status: response.status,
+        hasData: !!response.data,
+        dataKeys: Object.keys(response.data || {}),
+        searchInformation: response.data?.search_information,
+        searchMetadata: response.data?.search_metadata,
+        error: response.data?.error,
+        searchParameters: response.data?.search_parameters
+      });
+
+      if (!response.data) {
+        throw new Error('Empty response from API');
+      }
+
+      if (response.data.error) {
+        console.error('API Error:', response.data.error);
+        console.error('Search Parameters:', response.data.search_parameters);
+        throw new Error(`API Error: ${response.data.error}`);
+      }
+
+      // Extract flights from the correct path in the response
+      const flights = response.data.flights_data || 
+                     response.data.best_flights?.oneway || 
+                     response.data.other_flights?.oneway || 
+                     response.data.flights_results || 
+                     [];
+
+      console.log('Found flights:', flights.length);
+      console.log('First flight example:', flights[0]);
+
+      if (!flights.length) {
+        console.log('No flights found. Response data:', {
+          searchInfo: response.data.search_information,
+          errorInfo: response.data.error_info,
+          searchParams: response.data.search_parameters,
+          bestFlights: response.data.best_flights,
+          otherFlights: response.data.other_flights,
+          flightsResults: response.data.flights_results,
+          flightsData: response.data.flights_data
+        });
+        throw new Error(`No flights found from ${departureCity} to ${arrivalCity} on ${outboundDate}. Try a different date or route.`);
+      }
+
+      // Transform the API response to match our interface
+      return flights.map((flight: any) => ({
+        price: parseFloat(String(flight.price?.total || flight.price).replace(/[^0-9.]/g, '') || '0'),
+        airline: flight.airline || flight.carrier || 'Unknown Airline',
+        flight_number: flight.flight_number || flight.flight || 'N/A',
         departure: {
-          ...flight.departure,
-          airport: flight.departure.airport.replace('London', departureCity)
-                                        .replace('Paris', arrivalCity)
+          airport: flight.departure?.airport || 
+                  flight.departure_airport || 
+                  `${departureCity} (${departureCode})`,
+          time: flight.departure?.time || 
+                flight.departure_time || 
+                'N/A'
         },
         arrival: {
-          ...flight.arrival,
-          airport: flight.arrival.airport.replace('London', departureCity)
-                                      .replace('Paris', arrivalCity)
+          airport: flight.arrival?.airport || 
+                  flight.arrival_airport || 
+                  `${arrivalCity} (${arrivalCode})`,
+          time: flight.arrival?.time || 
+                flight.arrival_time || 
+                'N/A'
         }
       }));
 
@@ -172,7 +335,9 @@ export class FlightService {
         url: error.config?.url
       });
       
-      throw new Error(`Failed to search flights: ${error.message}`);
+      // Provide a more user-friendly error message
+      const errorMessage = error.response?.data?.error || error.message;
+      throw new Error(`Failed to search flights: ${errorMessage}`);
     }
   }
 }

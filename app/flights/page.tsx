@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Plane, Bell, ArrowRight, Loader2 } from "lucide-react";
+import { Plane, Bell, ArrowRight, Loader2, Calendar } from "lucide-react";
 import axios from "axios";
 
 const fadeInUp = {
@@ -20,8 +20,16 @@ export default function FlightTrackerPage() {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [priceDates, setPriceDates] = useState<any[]>([]);
+  const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
+
+  // Get min and max dates for the date picker
+  const minDate = new Date();
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + 6); // Allow booking up to 6 months ahead
 
   const validateForm = () => {
     if (origin === destination) {
@@ -32,11 +40,34 @@ export default function FlightTrackerPage() {
       toast.error("Please enter valid city names (minimum 3 letters)");
       return false;
     }
-    if (parseFloat(targetPrice) <= 0) {
-      toast.error("Please enter a valid target price");
-      return false;
-    }
     return true;
+  };
+
+  const loadPriceCalendar = async () => {
+    if (!validateForm()) return;
+    
+    setIsLoadingCalendar(true);
+    try {
+      const response = await axios.get(`/api/flights/search`, {
+        params: {
+          origin,
+          destination,
+          mode: 'calendar'
+        }
+      });
+
+      if (response.data.success && response.data.prices) {
+        setPriceDates(response.data.prices);
+        toast.success(`Found prices for ${response.data.prices.filter((p: any) => p.available).length} dates`);
+      } else {
+        toast.error(response.data.error || "Failed to load price calendar");
+      }
+    } catch (error: any) {
+      console.error("Calendar error:", error);
+      toast.error(error.response?.data?.error || error.message);
+    } finally {
+      setIsLoadingCalendar(false);
+    }
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -45,13 +76,14 @@ export default function FlightTrackerPage() {
     
     setIsSubmitting(true);
     try {
-      console.log('Searching flights:', { origin, destination });
+      console.log('Searching flights:', { origin, destination, date: selectedDate });
       
       // First, search for flights
       const searchResponse = await axios.get(`/api/flights/search`, {
         params: {
           origin,
-          destination
+          destination,
+          date: selectedDate ? formatDate(selectedDate) : undefined
         }
       });
 
@@ -60,6 +92,9 @@ export default function FlightTrackerPage() {
       if (searchResponse.data.success && searchResponse.data.flights) {
         setSearchResults(searchResponse.data.flights);
         toast.success(`Found ${searchResponse.data.flights.length} flights!`);
+        
+        // Load the price calendar after successful search
+        loadPriceCalendar();
       } else {
         console.error('API returned success false:', searchResponse.data);
         toast.error(searchResponse.data.error || "No flights found for this route");
@@ -81,6 +116,39 @@ export default function FlightTrackerPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDisplayDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
+  };
+
+  const getDisplayDate = (date: Date): string => {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
   };
 
   return (
@@ -128,7 +196,7 @@ export default function FlightTrackerPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
             <div className="relative p-8">
               <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="grid gap-8 sm:grid-cols-3">
+                <div className="grid gap-8 sm:grid-cols-4">
                   <div className="space-y-2">
                     <Label htmlFor="origin" className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       Origin City
@@ -162,6 +230,29 @@ export default function FlightTrackerPage() {
                         required
                       />
                       <Plane className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="date" className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Travel Date
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="date"
+                        type="date"
+                        value={selectedDate ? formatDate(selectedDate) : ''}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setSelectedDate(e.target.value ? new Date(e.target.value) : undefined)}
+                        min={formatDate(minDate)}
+                        max={formatDate(maxDate)}
+                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
+                      />
+                      <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+                      {selectedDate && (
+                        <div className="mt-1 text-sm text-gray-500">
+                          Selected: {getDisplayDate(selectedDate)}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -206,6 +297,68 @@ export default function FlightTrackerPage() {
             </div>
           </Card>
         </motion.div>
+
+        {/* Price Calendar */}
+        {priceDates.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="relative overflow-hidden mt-8">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
+              <div className="relative p-8">
+                <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Price Calendar
+                </h2>
+                <div className="grid grid-cols-7 gap-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="text-center font-medium text-gray-500 text-sm p-2">
+                      {day}
+                    </div>
+                  ))}
+                  {priceDates.map((date, index) => {
+                    const dateObj = new Date(date.date);
+                    const dayOfWeek = dateObj.getDay();
+                    const style = index === 0 ? { gridColumnStart: dayOfWeek + 1 } : {};
+                    
+                    return (
+                      <div
+                        key={date.date}
+                        style={style}
+                        className={`
+                          p-2 text-center rounded-lg transition-all duration-200
+                          ${date.available 
+                            ? 'bg-white/50 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-700/80 cursor-pointer'
+                            : 'bg-gray-100/50 dark:bg-gray-900/50 text-gray-400 cursor-not-allowed'}
+                        `}
+                        onClick={() => {
+                          if (date.available) {
+                            setSelectedDate(dateObj);
+                            const searchElement = document.getElementById('date');
+                            if (searchElement) {
+                              searchElement.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }
+                        }}
+                        title={date.available ? `${formatDisplayDate(date.date)} - ${formatPrice(date.price)}` : formatDisplayDate(date.date)}
+                      >
+                        <div className="text-sm font-medium">
+                          {dateObj.getDate()}
+                        </div>
+                        {date.available && (
+                          <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                            {formatPrice(date.price)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Search Results */}
         {searchResults.length > 0 && (

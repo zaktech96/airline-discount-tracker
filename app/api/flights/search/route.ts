@@ -10,9 +10,11 @@ export async function GET(req: Request) {
     const { searchParams } = url;
     const origin = searchParams.get('origin');
     const destination = searchParams.get('destination');
+    const dateParam = searchParams.get('date');
+    const mode = searchParams.get('mode') || 'single'; // 'single' or 'calendar'
     
     console.log('Request URL:', url.toString());
-    console.log('Search Parameters:', { origin, destination });
+    console.log('Search Parameters:', { origin, destination, dateParam, mode });
 
     if (!origin || !destination) {
       console.log('Missing required parameters');
@@ -24,14 +26,23 @@ export async function GET(req: Request) {
 
     try {
       console.log('Calling flight service...');
-      const flights = await flightService.searchFlights(origin, destination);
-      console.log('Flights found:', flights?.length || 0);
       
-      return NextResponse.json({
-        success: true,
-        flights: flights || [],
-        message: `Found ${flights?.length || 0} flights`
-      });
+      if (mode === 'calendar') {
+        const startDate = dateParam ? new Date(dateParam) : new Date();
+        const prices = await flightService.getDateRangePrices(origin, destination, startDate);
+        return NextResponse.json({
+          success: true,
+          prices,
+          message: `Found prices for ${prices.filter(p => p.available).length} dates`
+        });
+      } else {
+        const flights = await flightService.searchFlights(origin, destination, dateParam || undefined);
+        return NextResponse.json({
+          success: true,
+          flights: flights || [],
+          message: `Found ${flights?.length || 0} flights`
+        });
+      }
     } catch (serviceError: any) {
       console.error('Flight service error:', {
         message: serviceError.message,
