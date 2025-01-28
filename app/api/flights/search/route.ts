@@ -36,11 +36,12 @@ export async function GET(req: Request) {
           message: `Found prices for ${prices.filter(p => p.available).length} dates`
         });
       } else {
-        const flights = await flightService.searchFlights(origin, destination, dateParam || undefined);
+        const searchDate = dateParam ? new Date(dateParam) : undefined;
+        const flights = await flightService.searchFlights(origin, destination, searchDate);
         return NextResponse.json({
           success: true,
-          flights: flights || [],
-          message: `Found ${flights?.length || 0} flights`
+          flights,
+          message: `Found ${flights.length} flights`
         });
       }
     } catch (serviceError: any) {

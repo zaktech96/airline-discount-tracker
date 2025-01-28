@@ -1,4 +1,4 @@
-import { generateFlightsForDate, generatePriceHistory } from './mock-flight-data';
+import { MOCK_FLIGHTS, POPULAR_ROUTES, generateFlightsForDate, generatePriceVariation } from './mock-flight-data';
 
 export class FlightService {
   private static instance: FlightService;
@@ -12,36 +12,52 @@ export class FlightService {
     return FlightService.instance;
   }
 
-  async searchFlights(from: string, to: string, date: Date) {
+  async searchFlights(from: string, to: string, date?: string | Date) {
     try {
-      console.log(`Searching flights from ${from} to ${to} on ${date.toISOString().split('T')[0]}`);
+      const searchDate = date ? new Date(date) : new Date();
+      console.log(`Searching flights from ${from} to ${to} on ${searchDate}`);
       
-      // Use mock data for demonstration
-      const flights = generateFlightsForDate(from, to, date);
+      // Normalize city names to match mock data
+      const normalizedFrom = from.toLowerCase();
+      const normalizedTo = to.toLowerCase();
       
-      if (!flights.length) {
-        throw new Error(`No flights found from ${from} to ${to} on ${date.toISOString().split('T')[0]}. Try a different date or route.`);
+      // Check if this is the London-Paris route
+      if (normalizedFrom.includes('london') && normalizedTo.includes('paris')) {
+        const flights = generateFlightsForDate('london', 'paris', searchDate);
+        return flights;
       }
 
-      return flights;
+      throw new Error('No flights found for this route. Try London to Paris for demo data.');
     } catch (error) {
       console.error('Error searching flights:', error);
       throw error;
     }
   }
 
-  async getPriceHistory(from: string, to: string, days: number = 30) {
-    try {
-      console.log(`Getting price history for ${from} to ${to} for the last ${days} days`);
+  async getDateRangePrices(from: string, to: string, startDate: Date) {
+    const prices = [];
+    const normalizedFrom = from.toLowerCase();
+    const normalizedTo = to.toLowerCase();
+    
+    // Only return data for London-Paris route
+    if (normalizedFrom.includes('london') && normalizedTo.includes('paris')) {
+      const basePrice = 150; // Base price for London-Paris route
       
-      // Use mock data for demonstration
-      const history = generatePriceHistory(from, to, days);
-      
-      return history;
-    } catch (error) {
-      console.error('Error getting price history:', error);
-      throw error;
+      // Generate prices for next 30 days
+      for (let i = 0; i < 30; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        
+        const price = generatePriceVariation(basePrice, date);
+        prices.push({
+          date: date.toISOString().split('T')[0],
+          price,
+          available: Math.random() > 0.2 // 80% chance of availability
+        });
+      }
     }
+    
+    return prices;
   }
 }
 
