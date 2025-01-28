@@ -12,11 +12,35 @@ export class FlightService {
     return FlightService.instance;
   }
 
-  async searchFlights(from: string, to: string, date?: string | Date) {
+  private getRouteKey(from: string, to: string): string | null {
+    const normalizedFrom = from.toLowerCase();
+    const normalizedTo = to.toLowerCase();
+    
+    // Check direct match
+    const directKey = `${normalizedFrom}-${normalizedTo}`;
+    if (POPULAR_ROUTES[directKey]) return directKey;
+    
+    // Check if cities are included in any route key
+    for (const key of Object.keys(POPULAR_ROUTES)) {
+      const [routeFrom, routeTo] = key.split('-');
+      if (normalizedFrom.includes(routeFrom) && normalizedTo.includes(routeTo)) {
+        return key;
+      }
+    }
+    
+    return null;
+  }
+
+  async searchFlights(from: string, to: string, date: string | Date | undefined = undefined) {
     try {
       const searchDate = date ? new Date(date) : new Date();
       console.log(`Searching flights from ${from} to ${to} on ${searchDate}`);
       
+      const routeKey = this.getRouteKey(from, to);
+      if (!routeKey) {
+        throw new Error('No flights found for this route. Try one of our popular routes: London-Paris, London-New York, London-Dubai, Dubai-Singapore, New York-Miami');
+      }
+
       // Normalize city names to match mock data
       const normalizedFrom = from.toLowerCase();
       const normalizedTo = to.toLowerCase();
