@@ -7,6 +7,7 @@ import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
 import './globals.css';
 import { validateConfig } from '@/lib/config-validator';
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Validate config on app initialization
 validateConfig();
@@ -71,6 +72,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <ThemeToggle />
               {children}
               <Toaster />
             </ThemeProvider>

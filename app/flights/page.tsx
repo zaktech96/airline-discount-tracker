@@ -241,13 +241,13 @@ export default function FlightTrackerPage() {
           </motion.div>
         </div>
 
-        {/* Home Button - Fixed positioned */}
-        <div className="fixed top-4 left-4 z-50">
+        {/* Navigation Buttons - Fixed positioned */}
+        <div className="fixed top-4 left-4 z-[100] md:z-50 bg-white/20 dark:bg-gray-900/20 backdrop-blur-md p-1 rounded-lg">
           <Link href="/">
             <Button 
               variant="outline" 
               size="sm" 
-              className="flex items-center gap-2 bg-white/50 hover:bg-white/80 backdrop-blur-sm shadow-sm"
+              className="flex items-center gap-2 bg-white/80 hover:bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200/50"
             >
               <Home className="h-4 w-4" />
               Home
