@@ -1,4 +1,6 @@
-// Flight Search API Integration Example
+# Flight Search API Integration Example
+
+will like to add some more info to this file
 
 // 1. API Configuration
 const API_CONFIG = {
