@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MOCK_FLIGHTS } from '@/lib/services/mock-flight-data';
+import { Home } from 'lucide-react';
+import Link from 'next/link';
 
 interface NoFlightsFoundProps {
   onRouteSelect: (origin: string, destination: string) => void;

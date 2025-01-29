@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Plane, Bell, ArrowRight, Loader2, Calendar, RefreshCw } from "lucide-react";
+import { Plane, Bell, ArrowRight, Loader2, Calendar, RefreshCw, Home } from "lucide-react";
 import axios from "axios";
 import { NoFlightsFound } from '@/components/no-flights-found';
 import { MOCK_FLIGHTS } from '@/lib/services/mock-flight-data';
+import Link from "next/link";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -207,36 +208,52 @@ export default function FlightTrackerPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-gray-900 dark:via-gray-800/90 dark:to-gray-900 py-16 px-6">
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Header Section */}
-        <motion.div 
-          className="text-center space-y-4"
-          initial="initial"
-          animate="animate"
-          variants={{
-            animate: { transition: { staggerChildren: 0.2 } }
-          }}
-        >
-          <motion.div variants={fadeInUp}>
-            <div className="inline-block rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 p-px mb-4">
-              <div className="rounded-full bg-white/90 dark:bg-black/90 px-4 py-1.5">
-                <span className="text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                  Set Up Price Alerts
-                </span>
+        <div className="flex flex-col items-center text-center mb-8">
+          <motion.div 
+            className="space-y-4"
+            initial="initial"
+            animate="animate"
+            variants={{
+              animate: { transition: { staggerChildren: 0.2 } }
+            }}
+          >
+            <motion.div variants={fadeInUp}>
+              <div className="inline-block rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 p-px mb-4">
+                <div className="rounded-full bg-white/90 dark:bg-black/90 px-4 py-1.5">
+                  <span className="text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                    Set Up Price Alerts
+                  </span>
+                </div>
               </div>
-            </div>
+            </motion.div>
+            <motion.h1 
+              variants={fadeInUp}
+              className="text-3xl font-bold tracking-tight sm:text-4xl bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-900 dark:from-white dark:via-indigo-200 dark:to-purple-200 bg-clip-text text-transparent"
+            >
+              Track Your Dream Flights
+            </motion.h1>
+            <motion.p 
+              variants={fadeInUp}
+              className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300"
+            >
+              Enter your route details below and we'll notify you when prices drop to your target.
+            </motion.p>
           </motion.div>
-          <motion.h1 
-            variants={fadeInUp}
-            className="text-3xl font-bold tracking-tight sm:text-4xl bg-gradient-to-r from-gray-900 via-indigo-800 to-purple-900 dark:from-white dark:via-indigo-200 dark:to-purple-200 bg-clip-text text-transparent"
-          >
-            Track Your Dream Flights
-          </motion.h1>
-          <motion.p 
-            variants={fadeInUp}
-            className="max-w-2xl mx-auto text-gray-600 dark:text-gray-300"
-          >
-            Enter your route details below and we'll notify you when prices drop to your target.
-          </motion.p>
-        </motion.div>
+        </div>
+
+        {/* Home Button - Fixed positioned */}
+        <div className="fixed top-4 left-4 z-50">
+          <Link href="/">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2 bg-white/50 hover:bg-white/80 backdrop-blur-sm shadow-sm"
+            >
+              <Home className="h-4 w-4" />
+              Home
+            </Button>
+          </Link>
+        </div>
 
         {/* Alert Form */}
         <motion.div
