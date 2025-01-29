@@ -204,7 +204,7 @@ export default function FlightTrackerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/80 via-indigo-50/80 to-purple-50/80 dark:from-gray-900 dark:via-gray-800/90 dark:to-gray-900 py-16 px-6">
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Header Section */}
         <motion.div 
@@ -244,8 +244,8 @@ export default function FlightTrackerPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
+          <Card className="relative overflow-hidden backdrop-blur-md border border-white/20 shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10" />
             <div className="relative p-8">
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid gap-8 sm:grid-cols-4">
@@ -334,7 +334,7 @@ export default function FlightTrackerPage() {
                   <Button 
                     type="submit" 
                     disabled={isSubmitting}
-                    className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                   >
                     {isSubmitting ? (
                       <>
@@ -394,7 +394,7 @@ export default function FlightTrackerPage() {
                         className={`
                           p-2 text-center rounded-lg transition-all duration-200
                           ${date.available 
-                            ? 'bg-white/50 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-700/80 cursor-pointer'
+                            ? 'bg-white/60 dark:bg-gray-800/60 hover:bg-white/90 dark:hover:bg-gray-700/90 cursor-pointer hover:scale-105 shadow-sm hover:shadow-md'
                             : 'bg-gray-100/50 dark:bg-gray-900/50 text-gray-400 cursor-not-allowed'}
                         `}
                         onClick={() => {
@@ -443,7 +443,7 @@ export default function FlightTrackerPage() {
                   {searchResults.map((flight, index) => (
                     <div 
                       key={index}
-                      className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                      className="p-4 bg-white/60 dark:bg-gray-800/60 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.01] backdrop-blur-sm border border-white/20"
                     >
                       <div className="flex justify-between items-center">
                         <div>
