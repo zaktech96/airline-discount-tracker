@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, FormEvent, ChangeEvent } from "react";
+import React, { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Plane, Bell, ArrowRight, Loader2, Calendar } from "lucide-react";
 import axios from "axios";
+import { NoFlightsFound } from '@/components/no-flights-found';
+import { MOCK_FLIGHTS } from '@/lib/services/mock-flight-data';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -25,11 +27,29 @@ export default function FlightTrackerPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [priceDates, setPriceDates] = useState<any[]>([]);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
+  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Get min and max dates for the date picker
   const minDate = new Date();
   const maxDate = new Date();
   maxDate.setMonth(maxDate.getMonth() + 6); // Allow booking up to 6 months ahead
+
+  useEffect(() => {
+    // Convert mock flights to alerts format
+    const mockAlerts = Object.entries(MOCK_FLIGHTS).map(([route, flights]) => {
+      const [origin, destination] = route.split('-');
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        origin,
+        destination,
+        targetPrice: flights[0].price - 50, // Set target price lower than current
+        currentPrice: flights[0].price,
+        createdAt: new Date().toISOString()
+      };
+    });
+    setActiveAlerts(mockAlerts);
+  }, []);
 
   const validateForm = () => {
     if (origin === destination) {
@@ -48,23 +68,26 @@ export default function FlightTrackerPage() {
     
     setIsLoadingCalendar(true);
     try {
-      const response = await axios.get(`/api/flights/search`, {
-        params: {
-          origin,
-          destination,
-          mode: 'calendar'
-        }
-      });
+      const routeKey = `${origin.toUpperCase()}-${destination.toUpperCase()}`;
+      const mockFlights = MOCK_FLIGHTS[routeKey];
 
-      if (response.data.success && response.data.prices) {
-        setPriceDates(response.data.prices);
-        toast.success(`Found prices for ${response.data.prices.filter((p: any) => p.available).length} dates`);
+      if (mockFlights) {
+        // Create price dates from mock flights
+        const prices = mockFlights.map(flight => ({
+          date: selectedDate ? formatDate(selectedDate) : formatDate(new Date()),
+          price: flight.price,
+          available: true
+        }));
+
+        setPriceDates(prices);
+        // Update success message to show number of alerts
+        toast.success(`Found prices for ${activeAlerts.length} alerts`);
       } else {
-        toast.error(response.data.error || "Failed to load price calendar");
+        toast.error("No price data available for this route");
       }
     } catch (error: any) {
       console.error("Calendar error:", error);
-      toast.error(error.response?.data?.error || error.message);
+      toast.error("Failed to load price calendar");
     } finally {
       setIsLoadingCalendar(false);
     }
@@ -75,44 +98,35 @@ export default function FlightTrackerPage() {
     if (!validateForm()) return;
     
     setIsSubmitting(true);
+    setHasSearched(true);
+    
     try {
-      console.log('Searching flights:', { origin, destination, date: selectedDate });
-      
-      // First, search for flights
-      const searchResponse = await axios.get(`/api/flights/search`, {
-        params: {
-          origin,
-          destination,
-          date: selectedDate ? formatDate(selectedDate) : undefined
-        }
-      });
+      const routeKey = `${origin.toUpperCase()}-${destination.toUpperCase()}`;
+      const mockFlights = MOCK_FLIGHTS[routeKey];
 
-      console.log('Search response:', searchResponse.data);
-
-      if (searchResponse.data.success && searchResponse.data.flights) {
-        setSearchResults(searchResponse.data.flights);
-        toast.success(`Found ${searchResponse.data.flights.length} flights!`);
-        
-        // Load the price calendar after successful search
+      if (mockFlights) {
+        setSearchResults(mockFlights.map(flight => ({
+          ...flight,
+          airline: flight.airline,
+          departure: {
+            time: flight.departure.time,
+            airport: flight.departure.airport
+          },
+          arrival: {
+            time: flight.arrival.time,
+            airport: flight.arrival.airport
+          }
+        })));
+        toast.success(`Found ${mockFlights.length} flights!`);
         loadPriceCalendar();
       } else {
-        console.error('API returned success false:', searchResponse.data);
-        toast.error(searchResponse.data.error || "No flights found for this route");
+        console.log('No flights found for route:', routeKey);
+        setSearchResults([]);
       }
-
     } catch (error: any) {
-      console.error("Flight search error:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-
-      const errorMessage = error.response?.data?.details || 
-                          error.response?.data?.error || 
-                          error.message || 
-                          "Failed to search flights";
-                          
-      toast.error(errorMessage);
+      console.error("Flight search error:", error);
+      setSearchResults([]); 
+      toast.error("Failed to search flights");
     } finally {
       setIsSubmitting(false);
     }
@@ -149,6 +163,34 @@ export default function FlightTrackerPage() {
       month: '2-digit',
       year: 'numeric'
     }).format(date);
+  };
+
+  const handleRouteSelect = async (origin: string, destination: string) => {
+    setOrigin(origin);
+    setDestination(destination);
+    
+    // Trigger search with new route
+    try {
+      setIsSubmitting(true);
+      const searchResponse = await axios.get(`/api/flights/search`, {
+        params: {
+          origin,
+          destination,
+          date: selectedDate ? formatDate(selectedDate) : undefined
+        }
+      });
+
+      if (searchResponse.data.success && searchResponse.data.flights?.length > 0) {
+        setSearchResults(searchResponse.data.flights);
+        toast.success(`Found ${searchResponse.data.flights.length} flights!`);
+        loadPriceCalendar();
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error("Failed to load flights for selected route");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -361,6 +403,7 @@ export default function FlightTrackerPage() {
         )}
 
         {/* Search Results */}
+        {searchResults.length === 0 && <NoFlightsFound onRouteSelect={handleRouteSelect} />}
         {searchResults.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -383,8 +426,12 @@ export default function FlightTrackerPage() {
                         <div>
                           <p className="font-semibold">{flight.airline}</p>
                           <p className="text-sm text-gray-600 dark:text-gray-300">
-                            {flight.departure?.time} - {flight.arrival?.time}
+                            {flight.departure.airport} → {flight.arrival.airport}
                           </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            {flight.departure.time} - {flight.arrival.time}
+                          </p>
+                          <p className="text-xs text-gray-500">Flight {flight.flight_number}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
@@ -407,28 +454,70 @@ export default function FlightTrackerPage() {
           </motion.div>
         )}
 
-        {/* Active Alerts */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="relative overflow-hidden mt-8">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
-            <div className="relative p-8">
-              <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Your Active Alerts
-              </h2>
-              <div className="space-y-4">
-                <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <p className="text-gray-500 dark:text-gray-400 text-center">
-                    No active alerts yet. Create one above to start tracking prices.
-                  </p>
+        {/* Active Alerts - Only show after search */}
+        {hasSearched && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="relative overflow-hidden mt-8">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5" />
+              <div className="relative p-8">
+                <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Your Active Alerts
+                </h2>
+                <div className="space-y-4">
+                  {activeAlerts.length === 0 ? (
+                    <div className="p-6 bg-white/50 dark:bg-gray-800/50 rounded-lg text-center">
+                      <Bell className="w-12 h-12 mx-auto mb-3 text-indigo-500/50" />
+                      <h3 className="text-lg font-semibold mb-2">Find Your Best Flight Deals</h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Set price alerts above and we'll notify you when prices drop to your target!
+                      </p>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                        Pro tip: Click "Set as Target" on any flight to start tracking
+                      </p>
+                    </div>
+                  ) : (
+                    activeAlerts.map((alert) => (
+                      <div 
+                        key={alert.id}
+                        className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-semibold">{alert.origin} → {alert.destination}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              Target: ${alert.targetPrice}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                              ${alert.currentPrice}
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                // Remove alert
+                                setActiveAlerts(alerts => alerts.filter(a => a.id !== alert.id));
+                                toast.success('Alert removed');
+                              }}
+                              className="mt-2"
+                            >
+                              Remove Alert
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            </div>
-          </Card>
-        </motion.div>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </div>
   );

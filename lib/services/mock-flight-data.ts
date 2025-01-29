@@ -64,6 +64,45 @@ export const MOCK_FLIGHTS: MockFlights = {
         airport: "Paris Charles de Gaulle (CDG)",
         time: "12:30"
       }
+    },
+    {
+      airline: "British Airways",
+      flight_number: "BA352",
+      price: 210,
+      departure: {
+        airport: "London Heathrow (LHR)",
+        time: "14:45"
+      },
+      arrival: {
+        airport: "Paris Charles de Gaulle (CDG)",
+        time: "17:00"
+      }
+    },
+    {
+      airline: "Air France",
+      flight_number: "AF1689",
+      price: 178,
+      departure: {
+        airport: "London Heathrow (LHR)",
+        time: "16:30"
+      },
+      arrival: {
+        airport: "Paris Charles de Gaulle (CDG)",
+        time: "18:45"
+      }
+    },
+    {
+      airline: "British Airways",
+      flight_number: "BA358",
+      price: 195,
+      departure: {
+        airport: "London Heathrow (LHR)",
+        time: "19:15"
+      },
+      arrival: {
+        airport: "Paris Charles de Gaulle (CDG)",
+        time: "21:30"
+      }
     }
   ],
   'JFK-LAX': [
@@ -86,11 +125,50 @@ export const MOCK_FLIGHTS: MockFlights = {
       price: 425,
       departure: {
         airport: "New York JFK (JFK)",
-        time: "14:15"
+        time: "11:15"
       },
       arrival: {
         airport: "Los Angeles (LAX)",
-        time: "17:45"
+        time: "14:45"
+      }
+    },
+    {
+      airline: "United Airlines",
+      flight_number: "UA789",
+      price: 385,
+      departure: {
+        airport: "New York JFK (JFK)",
+        time: "14:30"
+      },
+      arrival: {
+        airport: "Los Angeles (LAX)",
+        time: "18:00"
+      }
+    },
+    {
+      airline: "American Airlines",
+      flight_number: "AA125",
+      price: 445,
+      departure: {
+        airport: "New York JFK (JFK)",
+        time: "16:45"
+      },
+      arrival: {
+        airport: "Los Angeles (LAX)",
+        time: "20:15"
+      }
+    },
+    {
+      airline: "Delta",
+      flight_number: "DL458",
+      price: 375,
+      departure: {
+        airport: "New York JFK (JFK)",
+        time: "20:00"
+      },
+      arrival: {
+        airport: "Los Angeles (LAX)",
+        time: "23:30"
       }
     }
   ],
