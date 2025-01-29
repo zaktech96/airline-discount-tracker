@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Plane, Bell, ArrowRight, Loader2, Calendar } from "lucide-react";
+import { Plane, Bell, ArrowRight, Loader2, Calendar, RefreshCw } from "lucide-react";
 import axios from "axios";
 import { NoFlightsFound } from '@/components/no-flights-found';
 import { MOCK_FLIGHTS } from '@/lib/services/mock-flight-data';
@@ -193,6 +193,16 @@ export default function FlightTrackerPage() {
     }
   };
 
+  const handleReset = () => {
+    setOrigin("");
+    setDestination("");
+    setTargetPrice("");
+    setSelectedDate(undefined);
+    setSearchResults([]);
+    setHasSearched(false);
+    setPriceDates([]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
       <div className="max-w-6xl mx-auto space-y-12">
@@ -283,18 +293,20 @@ export default function FlightTrackerPage() {
                       <Input
                         id="date"
                         type="date"
+                        placeholder="dd/mm/2025"
                         value={selectedDate ? formatDate(selectedDate) : ''}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setSelectedDate(e.target.value ? new Date(e.target.value) : undefined)}
                         min={formatDate(minDate)}
                         max={formatDate(maxDate)}
-                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500"
+                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 [&::-webkit-calendar-picker-indicator]:opacity-0 pr-14"
                       />
-                      <Calendar className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
-                      {selectedDate && (
-                        <div className="mt-1 text-sm text-gray-500">
-                          Selected: {getDisplayDate(selectedDate)}
-                        </div>
-                      )}
+                      <Calendar 
+                        className="absolute right-3 top-2.5 h-4 w-4 text-gray-400 cursor-pointer" 
+                        onClick={() => {
+                          const dateInput = document.getElementById('date') as HTMLInputElement;
+                          dateInput?.showPicker?.();
+                        }}
+                      />
                     </div>
                   </div>
                   
@@ -318,23 +330,34 @@ export default function FlightTrackerPage() {
                   </div>
                 </div>
                 
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Searching Flights...
-                    </>
-                  ) : (
-                    <>
-                      Search Flights
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-4">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Searching Flights...
+                      </>
+                    ) : (
+                      <>
+                        Search Flights
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={handleReset}
+                    className="px-4"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
               </form>
             </div>
           </Card>
